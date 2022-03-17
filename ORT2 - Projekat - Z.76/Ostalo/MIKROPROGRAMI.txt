@@ -1,0 +1,159 @@
+ORT2 PROJEKAT ZADATAK 76 ---> MIKROPROGRAMI
+
+FETCH:
+
+step00 br(if notPSWSTandFETCH then step00)
+step01 ldMAR, incPC
+step02 rdMEM, ldMDR, br(if notFCBUS then step02)
+step03 ldIR31..24
+step04 br(if grinst then step00)
+step05 br(if bezadr1 then step14)
+step06 ldMAR, incPC
+step07 rdMEM, ldMDR, br(if notFCBUS then step07)
+step08 ldIR23..16
+step09 br(if gradr then step00)
+step0A br(if jump2 then step14)
+step0B br(if adr2 then step13)
+step0C ldMAR, incPC
+step0D rdMEM, ldMDR, br(if notFCBUS then step0D)
+step0E ldIR15..8, br(if jump3 then step14)
+step0F br(if adr3 then step13)
+step10 ldMAR, incPC
+step11 rdMEM, ldMDR, br(if notFCBUS then step11)
+step12 ldIR7..0
+step13 clFETCH, stADDR, br step00
+step14 clFETCH, stEXEC, br step00
+
+ADDR:
+
+step00 br(if notADDR then step00)
+step01 br(case(immed, memdir, regdir, memind, preincr, postdec, regindpom) then (immed, step02), (memdir, step03), (regdir, step04), (memind, step05), (preincr, step0B),
+                                                                                                                                       (postdec, step0F), (regindpom, step13))
+step02 ldB, br step1A       <---- IMMED
+step03 mxMAR0, ldMAR, br step14     <---- MEMDIR
+step04  mxB0, ldB, br step1A      <---- REGDIR
+step05  mxMAR0, ldMAR     <---- MEMIND
+step06 rdMEM, ldMDR, br(if notFCBUS then step06)
+step07 ldDWL, incMAR
+step08 rdMEM, ldMDR, br(if notFCBUS then step08)
+step09 ldDWH
+step0A ldMAR, mxMAR0, mxMAR1, br step14
+step0B mxB0, ldB       <---- PREINCR
+step0C incB
+step0D incB
+step0E ldMAR, mxMAR2, wrGPR, br step14
+step0F mxB0, ldB, ldMAR, mxMAR1      <---- POSTDEC
+step10 decB
+step11 decB
+step12 wrGPR, br step14
+step13 ldMAR, mxMAR2, mxMAR0         <---- REGINDPOM
+step14 br(if NoRead then step1A)
+step15 rdMEM, ldMDR, br(if notFCBUS then step15)
+step16 ldDWL, incMAR
+step17 rdMEM, ldMDR, br(if notFCBUS then step17)
+step18 ldDWH
+step19 ldB, mxB1
+step1A clADDR, stEXEC, br step00
+
+EXEC:
+
+step00 br(if notEXEC then step00)
+step01 br(case(HALT, RTS, RTI, ASL, POPPSW, PUSH, POP, BEQL, BNEQ, BLEQU, BLSS, JLEQ, JMP, JSR, LD, ST, JADR, TST, XOR, STRLEN) then
+(HALT, step02), (RTS, step03), (RTI, step09), (ASL, step14), (POPPSW, step15), (PUSH, step1B), (POP, step21), (BEQL, step28), (BNEQ, step28), (BLEQU, step28), 
+(BLSS, step28), (JLEQ, step2A), (JMP, step2B), (JSR, step2C), (LD, step32), (ST, step34), (JADR, step3B), (TST, step3C), (XOR, step3D), (STRLEN, step3F) 
+)
+       
+step02 clPSWSTART, br step45        <--- HALT
+step03 ldMAR, mxMAR1, mxMAR2, decSP     <--- RTS
+step04 rdMEM, ldMDR, br(if notFCBUS then step04)
+step05 ldMAR, mxMAR1, mxMAR2, decSP, ldDWH
+step06 rdMEM, ldMDR, br(if notFCBUS then step06)
+step07 ldDWL
+step08 ldPC, br step45
+step09 ldMAR, mxMAR1, mxMAR2, decSP    <---RTI
+step0A rdMEM, ldMDR, br(if notFCBUS then step0A)
+step0B ldMAR, mxMAR1, mxMAR2, decSP, ldDWH
+step0C rdMEM, ldMDR, br(if notFCBUS then step0C)
+step0D ldMAR, mxMAR1, mxMAR2, decSP, ldDWL
+step0E ldST, ldZ, ldN, ldC, ldV, ldI
+step0F rdMEM, ldMDR, br(if notFCBUS then step0F)
+step10 ldMAR, mxMAR1, mxMAR2, decSP, ldDWH
+step11 rdMEM, ldMDR, br(if notFCBUS then step11)
+step12 ldDWL
+step13 ldA, br step03
+step14 ldA, mxA0, aslALU, ldC, ldN, ldZ, br step45        <--- ASL
+step15 ldMAR, mxMAR1, mxMAR2, decSP     <--- POPPSW
+step16 rdMEM, ldMDR, br(if notFCBUS then step16)
+step17 ldMAR, mxMAR1, mxMAR2, decSP, ldDWH
+step18 rdMEM, ldMDR, br(if notFCBUS then step18)
+step19 ldDWL
+step1A ldST, ldZ, ldN, ldC, ldV, ldI, br step45
+step1B incSP        <--- PUSH
+step1C ldMAR, mxMAR1, mxMAR2, ldMDR, mxMDR1, incSP
+step1D wrMEM, br(if notFCBUS then step1D)
+step1E ldMAR, mxMAR1, mxMAR2, ldMDR, mxMDR0
+step1F wrMEM, br(if notFCBUS then step1F)
+step20 br step45
+step21 ldMAR, mxMAR1, mxMAR2, decSP         <--- POP
+step22 rdMEM, ldMDR, br(if notFCBUS then step22)
+step23 ldMAR, mxMAR1, mxMAR2, decSP, ldDWH
+step24 rdMEM, ldMDR, br(if notFCBUS then step24)
+step25 ldDWL
+step26 ldA
+step27 ldZ, ldN, br step45
+step28 br(if notbrorjump then step45)       <--- BEQL, BLEQU, BLSS, BNEQ
+step29 ldPC, mxPC0, br step45
+step2A br(if notbrorjump then step45)       <--- JLEQ
+step2B ldPC, mxPC1, br step45       <--- JMP
+step2C incSP        <--- JSR
+step2D ldMAR, mxMAR1, mxMAR2, ldMDR, mxMDR2, incSP
+step2E wrMEM, br(if notFCBUS then step2E)
+step2F ldMAR, mxMAR1, mxMAR2, ldMDR, mxMDR1, mxMDR0
+step30 wrMEM, br(if notFCBUS then step30)
+step31 ldPC, mxPC1, br step45
+step32 ldA, mxA1     <--- LD
+step33 ldZ, ldN, br step45
+step34 br(if regdir then step3A)        <--- ST
+step35 ldMDR, mxMDR1
+step36 wrMEM, br(if notFCBUS then step36)
+step37 incMAR, ldMDR, mxMDR0
+step38 wrMEM, br(if notFCBUS then step38)
+step39 br step45
+step3A wrGPR, mxGPR0, br step45
+step3B ldPC, mxPC0, mxPC1, br step45        <--- JADR
+step3C andALU, ldZ, ldN, br step45      <--- TST
+step3D ldA, xorALU, mxA0     <--- XOR
+step3E ldZ, ldN, br step45
+step3F clA      <--- STRLEN
+step40 rdMEM, ldMDR, br(if notFCBUS then step40)
+step41 br(if MDR_ZERO then step44)
+step42 incMAR, incALU, ldC, ldA, mxA0
+step43 ldV, ldN, br step40
+step44 ldZ
+step45 stINTR, clEXEC, br step00
+
+INTR:
+
+step00 br(if notINTR then step00)
+step01 br(if notPREKID then step16)
+step02 incSP
+step03 ldMAR, mxMAR1, mxMAR2, incSP, ldMDR, mxMDR2
+step04 wrMEM, br(if notFCBUS then step04)
+step05 ldMAR, mxMAR1, mxMAR2, incSP, ldMDR, mxMDR0, mxMDR1
+step06 wrMEM, br(if notFCBUS then step06)
+step07 ldMAR, mxMAR1, mxMAR2, incSP, ldMDR, mxMDR1
+step08 wrMEM, br(if notFCBUS then step08)
+step09 ldMAR, mxMAR1, mxMAR2, incSP, ldMDR, mxMDR0
+step0A wrMEM, br(if notFCBUS then step0A)
+step0B ldMAR, mxMAR1, mxMAR2, incSP, ldMDR, mxMDR1, mxMDR2
+step0C wrMEM, br(if notFCBUS then step0C)
+step0D ldMAR, mxMAR1, mxMAR2, ldMDR, mxMDR0, mxMDR2
+step0E wrMEM, br(if notFCBUS then step0E)
+step0F ldBR
+step10 ldMAR, mxMAR0, mxMAR1, mxMAR2
+step11 ldMDR, rdMEM, br(if notFCBUS then step11)
+step12 ldDWL, incMAR
+step13 ldMDR, rdMEM, br(if notFCBUS then step13)
+step14 ldDWH
+step15 ldPC
+step16 stFETCH, clINTR, br step00
